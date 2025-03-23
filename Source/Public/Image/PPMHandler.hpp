@@ -3,6 +3,6 @@
 
 #include "Image.hpp"
 
-void ppm_handler_new(ImageHandler* handler);
+errno_t ppm_handler_new(ImageHandler** handler);
 
 #endif

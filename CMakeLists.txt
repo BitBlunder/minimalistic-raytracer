@@ -14,6 +14,10 @@ set(SRC_FILES
 	Source/Private/Image/PPMHandler.cpp
 )
 
+set(INCLUDE_DIRS
+	${CMAKE_SOURCE_DIR}/Source/Public
+)
+
 add_executable(${PROJECT_NAME} ${SRC_FILES})
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/Source/Public)
+target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIRS})

@@ -67,4 +67,5 @@ _deps
 Lib/*
 Docs/*
 Build/*
+Assets/*
 Benchmarks/*

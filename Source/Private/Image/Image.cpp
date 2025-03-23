@@ -18,6 +18,8 @@ errno_t image_register_handler(ImageHandler* handler)
 
 		Image::s_handler_list->data = handler;
 		Image::s_handler_list->next = nullptr;
+
+		return 1;
 	}
 
 	ImageHandlerNode* node = (ImageHandlerNode*)malloc(sizeof(ImageHandlerNode));
@@ -29,7 +31,7 @@ errno_t image_register_handler(ImageHandler* handler)
 
 	Image::s_handler_list = node;
 
-	return 0;
+	return 1;
 }
 
 errno_t image_get_handler_count(size_t* count)
@@ -42,7 +44,7 @@ errno_t image_get_handler_count(size_t* count)
 
 	*count = counter;
 
-	return 0;
+	return 1;
 }
 
 errno_t image_get_handler_by_index(ImageHandler* handler, size_t index)
@@ -55,9 +57,9 @@ errno_t image_get_handler_by_index(ImageHandler* handler, size_t index)
 	for (; node || index == counter; node = node->next)
 		++counter;
 
-	handler = node->data;
+	memcpy(handler, node->data, sizeof(ImageHandler));
 
-	return 0;
+	return 1;
 }
 errno_t image_get_handler_by_format(ImageHandler* handler, const char* exts)
 {
@@ -66,9 +68,9 @@ errno_t image_get_handler_by_format(ImageHandler* handler, const char* exts)
 	auto node = Image::s_handler_list;
 	for (; node || strcmp(node->data->exts, exts) == 0; node = node->next);
 
-	handler = node->data;
+	memcpy(handler, node->data, sizeof(ImageHandler));
 
-	return 0;
+	return 1;
 }
 
 errno_t image_find_handler_by_filename(ImageHandler* handler, const char* filename)
@@ -97,41 +99,36 @@ errno_t image_find_handler_by_filename(ImageHandler* handler, const char* filena
 			if (!start_ptr)
 				break;
 
-			end_ptr = start_ptr + suffix_result_len;
+			end_ptr = start_ptr + suffix_result_len - 1;
 
 			if (*end_ptr == ':' || *end_ptr == '\0')
 			{
-				handler = node->data;
-				return 0;
+				memcpy(handler, node->data, sizeof(ImageHandler));
+				return 1;
 			}
 
 			exts = end_ptr;
 		}
 	}
 
-	return 0;
+	return 1;
 }
 
 
-errno_t image_new(Image* image)
+errno_t image_new(Image** image)
 {
-	image = (Image*)malloc(sizeof(Image));
-	if (!image)
-		return -1;
+	*image = (Image*)malloc(sizeof(Image));
+	if (!image) return -1;
 
-	image->format = Image::FMT_RGBA32;
+	(*image)->format = Image::FMT_NULL;
 
-	image->buffer = nullptr;
-	image->filename = nullptr;
+	(*image)->buffer = nullptr;
+	(*image)->filename = nullptr;
 
-	size_t size;
-	if (!image_get_pixel_size(image, &size))
-		return -1;
+	(*image)->pixel_size = 0;
+	(*image)->width = (*image)->height = 0;
 
-	image->pixel_size = size;
-	image->width = image->height = 0;
-
-	return 0;
+	return 1;
 }
 errno_t image_free(Image* image)
 {
@@ -139,18 +136,16 @@ errno_t image_free(Image* image)
 
 	free(image->buffer);
 	free(image->filename);
-
 	free(image);
 
-	return 0;
+	return 1;
 }
 
 errno_t image_load_file(Image* image)
 {
 	assert(image);
 
-	size_t handler_count;
-	if(!image_get_handler_count(&handler_count) || !handler_count)
+	if(!Image::s_handler_list)
 		return -1;
 
 	ImageHandler handler;
@@ -160,14 +155,13 @@ errno_t image_load_file(Image* image)
 	if (!handler.ops.read_file(image))
 		return -1;
 
-	return 0;
+	return 1;
 }
 errno_t image_save_file(Image* image)
 {
 	assert(image);
 
-	size_t handler_count;
-	if(!image_get_handler_count(&handler_count) || !handler_count)
+	if(!Image::s_handler_list)
 		return -1;
 
 	ImageHandler handler;
@@ -177,15 +171,14 @@ errno_t image_save_file(Image* image)
 	if (!handler.ops.write_file(image))
 		return -1;
 
-	return 0;
+	return 1;
 }
 
 errno_t image_load_memory(Image* image, MemoryStream* stream)
 {
 	assert(image && stream);
 
-	size_t handler_count;
-	if(!image_get_handler_count(&handler_count) || !handler_count)
+	if(!Image::s_handler_list)
 		return -1;
 
 	ImageHandler handler;
@@ -195,14 +188,13 @@ errno_t image_load_memory(Image* image, MemoryStream* stream)
 	if (!handler.ops.read_memory_stream(image, stream))
 		return -1;
 
-	return 0;
+	return 1;
 }
 errno_t image_save_memory(Image* image, MemoryStream* stream)
 {
 	assert(image && stream);
 
-	size_t handler_count;
-	if(!image_get_handler_count(&handler_count) || !handler_count)
+	if(!Image::s_handler_list)
 		return -1;
 
 	ImageHandler handler;
@@ -212,23 +204,24 @@ errno_t image_save_memory(Image* image, MemoryStream* stream)
 	if (!handler.ops.write_memory_stream(image, stream))
 		return -1;
 
-	return 0;
+	return 1;
 }
 
-errno_t image_get_pixel_size(Image* image, size_t* size)
+errno_t image_get_pixel_size(Image* image)
 {
 	assert(image);
 
 	switch(image->format)
 	{
-		case Image::FMT_GREY8:  *size = 1;
-		case Image::FMT_RGB24:  *size = 3;
-		case Image::FMT_RGBA32: *size = 4;
+		case Image::FMT_GREY8:  image->pixel_size = 1; break;
+		case Image::FMT_RGB24:  image->pixel_size = 3; break;
+		case Image::FMT_RGBA32: image->pixel_size = 4; break;
+		case Image::FMT_RGBF48: image->pixel_size = 6; break;
 
 		default: return -1;
 	}
 
-	return 0;
+	return 1;
 }
 
 errno_t image_set_pixel(Image* image, uint32_t x, uint32_t y, void* pixel)
@@ -241,7 +234,7 @@ errno_t image_set_pixel(Image* image, uint32_t x, uint32_t y, void* pixel)
 	uint8_t* dst = (uint8_t*)image->buffer + ((x + y * image->width) * image->pixel_size);
 	memcpy(dst, pixel, image->pixel_size);
 
-	return 0;
+	return 1;
 }
 errno_t image_get_pixel(Image* image, uint32_t x, uint32_t y, void* pixel)
 {
@@ -253,7 +246,7 @@ errno_t image_get_pixel(Image* image, uint32_t x, uint32_t y, void* pixel)
 	uint8_t* src = (uint8_t*)image->buffer + ((x + y * image->width) * image->pixel_size);
 	memcpy(pixel, src, image->pixel_size);
 
-	return 0;
+	return 1;
 }
 
 errno_t image_set_pixel1i(Image* image, uint32_t x, uint32_t y, int pixel)
@@ -288,7 +281,7 @@ errno_t image_get_pixel3i(Image* image, uint32_t x, uint32_t y, int* r, int* g, 
 	*g = pixels[1];
 	*b = pixels[2];
 
-	return 0;
+	return 1;
 }
 
 errno_t image_set_pixel4i(Image* image, uint32_t x, uint32_t y, int r, int g, int b, int a)
@@ -311,33 +304,27 @@ errno_t image_get_pixel4i(Image* image, uint32_t x, uint32_t y, int *r, int *g, 
 	*b = pixels[2];
 	*a = pixels[4];
 
-	return 0;
+	return 1;
 }
 
-errno_t image_set_pixel_buffer(Image* image, uint32_t width, uint32_t height, Image::Format format, void* buffer)
+errno_t image_set_pixel_buffer(Image* image, void* buffer)
 {
 	assert(image);
 
-	if (width < 1 || height < 1) return -1;
-
-	size_t pixel_size;
-	if (!image_get_pixel_size(image, &pixel_size))
+	if (image->width < 1 || image->height < 1)
 		return -1;
 
-	size_t buffer_size = width * height * pixel_size;
+	if (!image_get_pixel_size(image))
+		return -1;
+
+	size_t buffer_size = image->width * image->height * image->pixel_size;
 	void* pixel_buffer = malloc(buffer_size);
 
-	if (buffer)
-		memcpy(pixel_buffer, buffer, buffer_size);
-	else
-		memset(pixel_buffer, 0, buffer_size);
+	if (buffer) memcpy(pixel_buffer, buffer, buffer_size);
+	else memset(pixel_buffer, 0, buffer_size);
 
 	free(image->buffer);
-
 	image->buffer = pixel_buffer;
-	image->width = width;
-	image->height = width;
-	image->format = format;
 
-	return 0;
+	return 1;
 }
