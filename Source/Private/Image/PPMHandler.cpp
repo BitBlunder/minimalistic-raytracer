@@ -136,9 +136,11 @@ _write_file(Image* image)
 		{
 			for (int x = 0; x < image->width; x++)
 			{
-				uint8_t r = ((uint8_t*)image->buffer)[((x + y * image->width) * 3) + 0];
-				uint8_t g = ((uint8_t*)image->buffer)[((x + y * image->width) * 3) + 1];
-				uint8_t b = ((uint8_t*)image->buffer)[((x + y * image->width) * 3) + 2];
+				int index = (x + (y * image->width)) * 3;
+
+				uint8_t r = ((uint8_t*)image->buffer)[index + 0];
+				uint8_t g = ((uint8_t*)image->buffer)[index + 1];
+				uint8_t b = ((uint8_t*)image->buffer)[index + 2];
 
 				if (!fprintf(fp, "%d %d %d ", r, g, b))
 					return -1;
