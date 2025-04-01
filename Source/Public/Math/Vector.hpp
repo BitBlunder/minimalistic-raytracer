@@ -1,7 +1,9 @@
 #ifndef VECTOR_HPP
 #define VECTOR_HPP
 
+#include <cmath>
 #include <cstdint>
+#include <iostream>
 #include <type_traits>
 
 template<typename InType, size_t InDims>
@@ -32,8 +34,8 @@ struct VectorN<InType, 2>
 	{
 		InType data[2];
 
-		struct { InType x, y };
-		struct { InType u, v };
+		struct { InType x, y; };
+		struct { InType u, v; };
 	};
 
 	InType& operator[](size_t index)
@@ -56,9 +58,9 @@ struct VectorN<InType, 3>
 	{
 		InType data[3];
 
-		struct { InType x, y, z };
-		struct { InType u, v, t };
-		struct { InType r, g, b };
+		struct { InType x, y, z; };
+		struct { InType u, v, t; };
+		struct { InType r, g, b; };
 	};
 
 	InType& operator[](size_t index)
@@ -81,7 +83,7 @@ struct VectorN<InType, 4>
 	{
 		InType data[4];
 
-		struct { InType x, y, z, w};
+		struct { InType x, y, z, w; };
 	};
 
 	InType& operator[](size_t index)
@@ -96,157 +98,148 @@ struct VectorN<InType, 4>
 
 
 template<typename InType, size_t InDims>
-inline VectorN<InType, InDims>
-operator-(const VectorN<InType, InDims>& v)
-{
-	VectorN<InType, InDims> result;
+InType
+vector_normalize(VectorN<InType, InDims>& v);
 
-	for (size_t i = 0; i < InDims; i++)
-		result[i] = -v[i];
+template<typename InType, size_t InDims>
+InType
+vector_length(const VectorN<InType, InDims>& v);
 
-	return result;
-}
+template<typename InType, size_t InDims>
+InType
+vector_distance(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs);
+
+template<typename InType, size_t InDims>
+InType
+vector_length_squared(const VectorN<InType, InDims>& v);
+
+template<typename InType, size_t InDims>
+InType
+vector_distance_squared(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs);
+
+template<typename InType, size_t InDims>
+InType
+vector_dot(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs);
+
+template<typename InType>
+VectorN<InType, 3>
+vector_cross(const VectorN<InType, 3>& lhs, const VectorN<InType, 3>& rhs);
 
 
 template<typename InType, size_t InDims>
-inline VectorN<InType, InDims>
-operator+(const VectorN<InType, InDims>& lhs, InType s)
-{
-	VectorN<InType, InDims> result;
-
-	for (size_t i = 0; i < InDims; i++)
-		result[i] = lhs[i] + s;
-
-	return result;
-}
-template<typename InType, size_t InDims>
-inline VectorN<InType, InDims>
-operator+(InType s, const VectorN<InType, InDims>& rhs)
-{
-	VectorN<InType, InDims> result;
-
-	for (size_t i = 0; i < InDims; i++)
-		result[i] = s + rhs[i];
-
-	return result;
-}
-
-template<typename InType, size_t InDims>
-inline VectorN<InType, InDims>
-operator-(const VectorN<InType, InDims>& lhs, InType s)
-{
-	VectorN<InType, InDims> result;
-
-	for (size_t i = 0; i < InDims; i++)
-		result[i] = lhs[i] - s;
-
-	return result;
-}
-template<typename InType, size_t InDims>
-inline VectorN<InType, InDims>
-operator-(InType s, const VectorN<InType, InDims>& rhs)
-{
-	VectorN<InType, InDims> result;
-
-	for (size_t i = 0; i < InDims; i++)
-		result[i] = s - rhs[i];
-
-	return result;
-}
-
-template<typename InType, size_t InDims>
-inline VectorN<InType, InDims>
-operator*(const VectorN<InType, InDims>& lhs, InType s)
-{
-	VectorN<InType, InDims> result;
-
-	for (size_t i = 0; i < InDims; i++)
-		result[i] = lhs[i] * s;
-
-	return result;
-}
-template<typename InType, size_t InDims>
-inline VectorN<InType, InDims>
-operator*(InType s, const VectorN<InType, InDims>& rhs)
-{
-	VectorN<InType, InDims> result;
-
-	for (size_t i = 0; i < InDims; i++)
-		result[i] = s * rhs[i];
-
-	return result;
-}
-
-template<typename InType, size_t InDims>
-inline VectorN<InType, InDims>
-operator/(const VectorN<InType, InDims>& lhs, InType s)
-{
-	VectorN<InType, InDims> result;
-
-	for (size_t i = 0; i < InDims; i++)
-		result[i] = lhs[i] / s;
-
-	return result;
-}
-template<typename InType, size_t InDims>
-inline VectorN<InType, InDims>
-operator/(InType s, const VectorN<InType, InDims>& rhs)
-{
-	VectorN<InType, InDims> result;
-
-	for (size_t i = 0; i < InDims; i++)
-		result[i] = s / rhs[i];
-
-	return result;
-}
+VectorN<InType, InDims>
+operator-(const VectorN<InType, InDims>& v);
 
 
 template<typename InType, size_t InDims>
-inline VectorN<InType, InDims>
-operator+(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs)
-{
-	VectorN<InType, InDims> result;
-
-	for (size_t i = 0; i < InDims; i++)
-		result[i] = lhs[i] + rhs[i];
-
-	return result;
-}
+bool
+operator==(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs);
 
 template<typename InType, size_t InDims>
-inline VectorN<InType, InDims>
-operator-(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs)
-{
-	VectorN<InType, InDims> result;
+bool
+operator!=(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs);
 
-	for (size_t i = 0; i < InDims; i++)
-		result[i] = lhs[i] - rhs[i];
-
-	return result;
-}
 
 template<typename InType, size_t InDims>
-inline VectorN<InType, InDims>
-operator*(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs)
-{
-	VectorN<InType, InDims> result;
-
-	for (size_t i = 0; i < InDims; i++)
-		result[i] = lhs[i] * rhs[i];
-
-	return result;
-}
+VectorN<InType, InDims>
+operator+=(VectorN<InType, InDims>& lhs, const InType& s);
 
 template<typename InType, size_t InDims>
-inline VectorN<InType, InDims>
-operator/(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs)
-{
-	VectorN<InType, InDims> result;
+VectorN<InType, InDims>
+operator-=(VectorN<InType, InDims>& lhs, const InType& s);
 
-	for (size_t i = 0; i < InDims; i++)
-		result[i] = lhs[i] / rhs[i];
+template<typename InType, size_t InDims>
+VectorN<InType, InDims>
+operator*=(VectorN<InType, InDims>& lhs, const InType& s);
 
-	return result;
-}
+template<typename InType, size_t InDims>
+VectorN<InType, InDims>
+operator/=(VectorN<InType, InDims>& lhs, const InType& s);
+
+
+template<typename InType, size_t InDims>
+VectorN<InType, InDims>
+operator+(const VectorN<InType, InDims>& lhs, InType s);
+
+template<typename InType, size_t InDims>
+VectorN<InType, InDims>
+operator+(InType s, const VectorN<InType, InDims>& rhs);
+
+template<typename InType, size_t InDims>
+VectorN<InType, InDims>
+operator-(const VectorN<InType, InDims>& lhs, InType s);
+
+template<typename InType, size_t InDims>
+VectorN<InType, InDims>
+operator-(InType s, const VectorN<InType, InDims>& rhs);
+
+template<typename InType, size_t InDims>
+VectorN<InType, InDims>
+operator*(const VectorN<InType, InDims>& lhs, InType s);
+
+template<typename InType, size_t InDims>
+VectorN<InType, InDims>
+operator*(InType s, const VectorN<InType, InDims>& rhs);
+
+template<typename InType, size_t InDims>
+VectorN<InType, InDims>
+operator/(const VectorN<InType, InDims>& lhs, InType s);
+
+template<typename InType, size_t InDims>
+VectorN<InType, InDims>
+operator/(InType s, const VectorN<InType, InDims>& rhs);
+
+
+template<typename InType, size_t InDims>
+VectorN<InType, InDims>
+operator+=(VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs);
+
+template<typename InType, size_t InDims>
+VectorN<InType, InDims>
+operator-=(VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs);
+
+template<typename InType, size_t InDims>
+VectorN<InType, InDims>
+operator*=(VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs);
+
+template<typename InType, size_t InDims>
+VectorN<InType, InDims>
+operator/=(VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs);
+
+
+template<typename InType, size_t InDims>
+VectorN<InType, InDims>
+operator+(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs);
+
+template<typename InType, size_t InDims>
+VectorN<InType, InDims>
+operator-(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs);
+
+template<typename InType, size_t InDims>
+VectorN<InType, InDims>
+operator*(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs);
+
+template<typename InType, size_t InDims>
+VectorN<InType, InDims>
+operator/(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs);
+
+
+template<typename InType, size_t InDims>
+std::ostream& operator<<(std::ostream& os, const VectorN<InType, InDims>& v);
+
+
+using Vec2i = VectorN<int, 2>;
+using Vec3i = VectorN<int, 3>;
+using Vec4i = VectorN<int, 4>;
+
+using Vec2f = VectorN<float, 2>;
+using Vec3f = VectorN<float, 3>;
+using Vec4f = VectorN<float, 4>;
+
+using Vec2d = VectorN<double, 2>;
+using Vec3d = VectorN<double, 3>;
+using Vec4d = VectorN<double, 4>;
 
 #endif
+
+#include "../../Private/Math/Vector.inl"
