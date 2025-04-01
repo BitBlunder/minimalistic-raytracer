@@ -14,6 +14,37 @@ _unary_op(const VectorN<InType, InDims>& v, Operation op)
 
 	return result;
 }
+template<typename InType, size_t InDims, typename Operation>
+inline VectorN<InType, InDims>
+_unary_op(const VectorN<InType, InDims>& v, Operation op)
+{
+	return {
+		op(v[0]),
+		op(v[1]),
+	};
+}
+template<typename InType, size_t InDims, typename Operation>
+inline VectorN<InType, InDims>
+_unary_op(const VectorN<InType, InDims>& v, Operation op)
+{
+	return {
+		op(v[0]),
+		op(v[1]),
+		op(v[2]),
+	};
+}
+template<typename InType, size_t InDims, typename Operation>
+inline VectorN<InType, InDims>
+_unary_op(const VectorN<InType, InDims>& v, Operation op)
+{
+	return {
+		op(v[0]),
+		op(v[1]),
+		op(v[2]),
+		op(v[3]),
+	};
+}
+
 
 template<typename InType, size_t InDims, typename Operation>
 inline VectorN<InType, InDims>
@@ -27,6 +58,40 @@ _binary_op(const VectorN<InType, InDims>& lhs, const InType& s, Operation op)
 	return result;
 }
 
+template<typename InType, typename Operation>
+inline VectorN<InType, 2>
+_binary_op(const VectorN<InType, 2>& lhs, const InType& s, Operation op)
+{
+	return {
+		op(lhs[0], s),
+		op(lhs[1], s)
+	};
+}
+
+template<typename InType, typename Operation>
+inline VectorN<InType, 3>
+_binary_op(const VectorN<InType, 3>& lhs, const InType& s, Operation op)
+{
+	return {
+		op(lhs[0], s),
+		op(lhs[1], s),
+		op(lhs[2], s)
+	};
+}
+
+template<typename InType, typename Operation>
+inline VectorN<InType, 4>
+_binary_op(const VectorN<InType, 4>& lhs, const InType& s, Operation op)
+{
+	return {
+		op(lhs[0], s),
+		op(lhs[1], s),
+		op(lhs[2], s),
+		op(lhs[3], s)
+	};
+}
+
+
 template<typename InType, size_t InDims, typename Operation>
 inline VectorN<InType, InDims>
 _binary_op(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs, Operation op)
@@ -39,44 +104,77 @@ _binary_op(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rh
 	return result;
 }
 
+template<typename InType, typename Operation>
+inline VectorN<InType, 2>
+_binary_op(const VectorN<InType, 2>& lhs, const VectorN<InType, 2>& rhs, Operation op)
+{
+	return {
+		op(lhs[0], rhs[0]),
+		op(lhs[1], rhs[1])
+	};
+}
+
+template<typename InType, typename Operation>
+inline VectorN<InType, 3>
+_binary_op(const VectorN<InType, 3>& lhs, const VectorN<InType, 3>& rhs, Operation op)
+{
+	return {
+		op(lhs[0], rhs[0]),
+		op(lhs[1], rhs[1]),
+		op(lhs[2], rhs[2])
+	};
+}
+
+template<typename InType, typename Operation>
+inline VectorN<InType, 4>
+_binary_op(const VectorN<InType, 4>& lhs, const VectorN<InType, 4>& rhs, Operation op)
+{
+	return {
+		op(lhs[0], rhs[0]),
+		op(lhs[1], rhs[1]),
+		op(lhs[2], rhs[2]),
+		op(lhs[3], rhs[3])
+	};
+}
+
 
 template<typename InType, size_t InDims>
-static inline void
+constexpr static inline void
 vector_normalize(VectorN<InType, InDims>& v)
 {
 	v *= InType(1) / vector_length(v);
 }
 
 template<typename InType, size_t InDims>
-static inline InType
+constexpr static inline InType
 vector_length(const VectorN<InType, InDims>& v)
 {
 	return sqrt(vector_length_squared(v));
 }
 
 template<typename InType, size_t InDims>
-static inline InType
+constexpr static inline InType
 vector_distance(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs)
 {
 	return vector_length(lhs - rhs);
 }
 
 template<typename InType, size_t InDims>
-static inline InType
+constexpr static inline InType
 vector_length_squared(const VectorN<InType, InDims>& v)
 {
 	return vector_dot(v, v);
 }
 
 template<typename InType, size_t InDims>
-static inline InType
+constexpr static inline InType
 vector_distance_squared(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs)
 {
 	return vector_length_squared(lhs - rhs);
 }
 
 template<typename InType, size_t InDims>
-static inline InType
+constexpr static inline InType
 vector_dot(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs)
 {
 	InType result = 0;
@@ -86,13 +184,22 @@ vector_dot(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rh
 	return result;
 }
 
+template<typename InType, size_t InDims>
+constexpr static inline InType
+vector_angle(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs)
+{
+	return acos(vector(lhs, rhs) / (vector_length(lhs) * vector_length(rhs)));
+}
+
 template<typename InType>
-static inline VectorN<InType, 3>
+constexpr static inline VectorN<InType, 3>
 vector_cross(const VectorN<InType, 3>& lhs, const VectorN<InType, 3>& rhs)
 {
-	return {lhs[1] * rhs[2] - lhs[2] * rhs[1],
-			lhs[2] * rhs[0] - lhs[0] * rhs[2],
-			lhs[0] * rhs[1] - lhs[1] * rhs[0]};
+	return {
+		lhs[1] * rhs[2] - lhs[2] * rhs[1],
+		lhs[2] * rhs[0] - lhs[0] * rhs[2],
+		lhs[0] * rhs[1] - lhs[1] * rhs[0]
+	};
 }
 
 
@@ -100,7 +207,9 @@ template<typename InType, size_t InDims>
 inline VectorN<InType, InDims>
 operator-(const VectorN<InType, InDims>& v)
 {
-	return _unary_op(v, [](const InType& x) { return -x; });
+	return _unary_op(v, [](const InType& a) {
+		return -a;
+	});
 }
 
 

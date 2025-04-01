@@ -98,31 +98,35 @@ struct VectorN<InType, 4>
 
 
 template<typename InType, size_t InDims>
-InType
+constexpr InType
 vector_normalize(VectorN<InType, InDims>& v);
 
 template<typename InType, size_t InDims>
-InType
+constexpr InType
 vector_length(const VectorN<InType, InDims>& v);
 
 template<typename InType, size_t InDims>
-InType
+constexpr InType
 vector_distance(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs);
 
 template<typename InType, size_t InDims>
-InType
+constexpr InType
 vector_length_squared(const VectorN<InType, InDims>& v);
 
 template<typename InType, size_t InDims>
-InType
+constexpr InType
 vector_distance_squared(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs);
 
 template<typename InType, size_t InDims>
-InType
+constexpr InType
 vector_dot(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs);
 
+template<typename InType, size_t InDims>
+constexpr InType
+vector_angle(const VectorN<InType, InDims>& lhs, const VectorN<InType, InDims>& rhs);
+
 template<typename InType>
-VectorN<InType, 3>
+constexpr VectorN<InType, 3>
 vector_cross(const VectorN<InType, 3>& lhs, const VectorN<InType, 3>& rhs);
 
 
