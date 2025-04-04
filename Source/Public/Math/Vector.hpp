@@ -98,7 +98,7 @@ struct VectorN<InType, 4>
 
 
 template<typename InType, size_t InDims>
-constexpr InType
+constexpr VectorN<InType, InDims>
 vector_normalize(VectorN<InType, InDims>& v);
 
 template<typename InType, size_t InDims>

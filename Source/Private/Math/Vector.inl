@@ -4,7 +4,7 @@
 #include <Math/Vector.hpp>
 
 template<typename InType, size_t InDims, typename Operation>
-inline VectorN<InType, InDims>
+static inline VectorN<InType, InDims>
 _unary_op(const VectorN<InType, InDims>& v, Operation op)
 {
 	VectorN<InType, InDims> result;
@@ -15,8 +15,8 @@ _unary_op(const VectorN<InType, InDims>& v, Operation op)
 	return result;
 }
 template<typename InType, size_t InDims, typename Operation>
-inline VectorN<InType, InDims>
-_unary_op(const VectorN<InType, InDims>& v, Operation op)
+static inline VectorN<InType, 2>
+_unary_op(const VectorN<InType, 2>& v, Operation op)
 {
 	return {
 		op(v[0]),
@@ -24,8 +24,8 @@ _unary_op(const VectorN<InType, InDims>& v, Operation op)
 	};
 }
 template<typename InType, size_t InDims, typename Operation>
-inline VectorN<InType, InDims>
-_unary_op(const VectorN<InType, InDims>& v, Operation op)
+static inline VectorN<InType, 3>
+_unary_op(const VectorN<InType, 3>& v, Operation op)
 {
 	return {
 		op(v[0]),
@@ -34,8 +34,8 @@ _unary_op(const VectorN<InType, InDims>& v, Operation op)
 	};
 }
 template<typename InType, size_t InDims, typename Operation>
-inline VectorN<InType, InDims>
-_unary_op(const VectorN<InType, InDims>& v, Operation op)
+static inline VectorN<InType, 4>
+_unary_op(const VectorN<InType, 4>& v, Operation op)
 {
 	return {
 		op(v[0]),
@@ -47,7 +47,7 @@ _unary_op(const VectorN<InType, InDims>& v, Operation op)
 
 
 template<typename InType, size_t InDims, typename Operation>
-inline VectorN<InType, InDims>
+static inline VectorN<InType, InDims>
 _binary_op(const VectorN<InType, InDims>& lhs, const InType& s, Operation op)
 {
 	VectorN<InType, InDims> result;
@@ -59,7 +59,7 @@ _binary_op(const VectorN<InType, InDims>& lhs, const InType& s, Operation op)
 }
 
 template<typename InType, typename Operation>
-inline VectorN<InType, 2>
+static inline VectorN<InType, 2>
 _binary_op(const VectorN<InType, 2>& lhs, const InType& s, Operation op)
 {
 	return {
@@ -69,7 +69,7 @@ _binary_op(const VectorN<InType, 2>& lhs, const InType& s, Operation op)
 }
 
 template<typename InType, typename Operation>
-inline VectorN<InType, 3>
+static inline VectorN<InType, 3>
 _binary_op(const VectorN<InType, 3>& lhs, const InType& s, Operation op)
 {
 	return {
@@ -80,7 +80,7 @@ _binary_op(const VectorN<InType, 3>& lhs, const InType& s, Operation op)
 }
 
 template<typename InType, typename Operation>
-inline VectorN<InType, 4>
+static inline VectorN<InType, 4>
 _binary_op(const VectorN<InType, 4>& lhs, const InType& s, Operation op)
 {
 	return {
@@ -139,10 +139,14 @@ _binary_op(const VectorN<InType, 4>& lhs, const VectorN<InType, 4>& rhs, Operati
 
 
 template<typename InType, size_t InDims>
-constexpr static inline void
+constexpr static inline VectorN<InType, InDims>
 vector_normalize(VectorN<InType, InDims>& v)
 {
-	v *= InType(1) / vector_length(v);
+	VectorN<InType, InDims> result = v;
+
+	result *= InType(1) / vector_length(v);
+
+	return result;
 }
 
 template<typename InType, size_t InDims>
