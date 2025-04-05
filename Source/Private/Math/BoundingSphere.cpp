@@ -8,25 +8,31 @@ _hit_impl(Hittable* hittable, const Ray& ray, double ray_tmin, double ray_tmax)
 	BoundingSphere* sphere = (BoundingSphere*)hittable;
 	hit_record.t = bounding_sphere_intersect(*sphere, ray);
 
-	if (hit_record.t > 0.0f)
+	if (hit_record.t > 0.0f && hit_record.t < FLT_MAX)
 	{
 		hit_record.hit = true;
 		hit_record.point = ray_point_at(ray, hit_record.t);
-		hit_record.normal = vector_normalize(sphere->center - hit_record.point);
+		hit_record.normal = vector_normalize(hit_record.point - sphere->center);
 	}
 
 	return hit_record;
 }
 
-BoundingSphere*
-bound_sphere_new()
+void
+bound_sphere_create(BoundingSphere& self, float radius)
 {
-	BoundingSphere* self = (BoundingSphere*)malloc(sizeof(BoundingSphere));
+	self.hit = _hit_impl;
 
-	self->hit = _hit_impl;
+	self.radius = radius;
+	self.center = { 0.0f, 0.0f, 0.0f };
+}
+void
+bound_sphere_create(BoundingSphere& self, float radius, Vec3f center)
+{
+	self.hit = _hit_impl;
 
-	self->radius = 10.0f;
-	self->center = Vec3f{0.0f, 0.0f, 0.0f};
+	self.radius = radius;
+	self.center = center;
 }
 
 float
@@ -38,11 +44,19 @@ bounding_sphere_intersect(const BoundingSphere& self, const Ray& ray)
 	auto b = vector_dot(ray.direction, ray_to_sphere) * -2.0f;
 	auto c = vector_length_squared(ray_to_sphere) - self.radius * self.radius;
 
-	auto discriminant = b*b - 4*a*c;
+	auto solution = find_quadratic_root(a, b, c);
 
-	if (discriminant < 0) {
-		return -1.0;
-	} else {
-		return (-b - std::sqrt(discriminant) ) / (2.0*a);
-	}
+	if (solution.roots == 0)
+		return FLT_MAX;
+
+	if (solution.solution1 > solution.solution2)
+		std::swap(solution.solution1, solution.solution2);
+
+	if (solution.solution1 >= 0.0f)
+		return solution.solution1;
+
+	if (solution.solution2 >= 0.0f)
+		return 0.0f;
+
+	return FLT_MAX;
 }

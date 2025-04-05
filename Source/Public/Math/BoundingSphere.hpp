@@ -1,9 +1,12 @@
 #ifndef BOUNDING_SPHERE_H
 #define BOUNDING_SPHERE_H
 
+#include <utility>
+
 #include <Math/Ray.hpp>
 #include <Math/Vector.hpp>
 #include <Math/Hittable.hpp>
+#include <Math/Numerical.hpp>
 
 #include <Graphics/Renderable.hpp>
 
@@ -13,8 +16,10 @@ struct BoundingSphere : public Hittable, Renderable
 	Vec3f center;
 };
 
-BoundingSphere*
-bound_sphere_new();
+void
+bound_sphere_create(BoundingSphere& self, float radius);
+void
+bound_sphere_create(BoundingSphere& self, float radius, Vec3f center);
 
 float
 bounding_sphere_intersect(const BoundingSphere& self, const Ray& ray);

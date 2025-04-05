@@ -7,39 +7,6 @@
 #include <Image/Image.hpp>
 #include <Image/PPMHandler.hpp>
 
-float hit_sphere(const Vec3f& center, double radius, const Ray& r)
-{
-	Vec3f oc = center - r.origin;
-	auto a = vector_length_squared(r.direction);
-	auto b = -2.0 * vector_dot(r.direction, oc);
-	auto c = vector_length_squared(oc) - radius * radius;
-	auto discriminant = b*b - 4*a*c;
-
-	if (discriminant < 0) {
-		return -1.0;
-	} else {
-		return (-b - std::sqrt(discriminant) ) / (2.0*a);
-	}
-}
-
-Vec3f render(const Ray& r)
-{
-	auto t = hit_sphere({ 0.0f, 0.0f, -1.0f }, 0.5, r);
-
-	if (t > 0.0)
-	{
-		Vec3f v1 = { 0.0f, 0.0f, -1.0f };
-		Vec3f v2 = ray_point_at(r, t);
-		Vec3f v3 = v2 - v1;
-
-		Vec3f N = vector_normalize(v3);
-
-		return 0.5f * Vec3f{ N.x + 1, N.y + 1, N.z + 1 };
-	}
-
-	return {0.0f, 0.0f, 0.0f};
-}
-
 int main(int argc, char** args)
 {
 	{
@@ -54,7 +21,7 @@ int main(int argc, char** args)
 
 	image_height = image_height < 1 ? 1 : image_height;
 
-	float viewport_width = 5.0;
+	float viewport_width = 1920.0f;
 	float viewport_height = viewport_width / (double(image_width) / image_height);
 
 	Vec3f camera_center = {0.0, 0.0, 0.0};
