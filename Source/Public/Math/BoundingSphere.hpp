@@ -6,6 +6,7 @@
 #include <Math/Ray.hpp>
 #include <Math/Vector.hpp>
 #include <Math/Hittable.hpp>
+#include <Math/Constants.hpp>
 #include <Math/Numerical.hpp>
 
 #include <Graphics/Renderable.hpp>

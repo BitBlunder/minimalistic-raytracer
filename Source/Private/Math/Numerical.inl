@@ -13,7 +13,7 @@ find_quadratic_root(InType a, InType b, InType c)
 	if (a == InType(0))
 	{
 		if (b == InType(0))
-			return { 0, InType(FLT_MAX), InType(FLT_MAX) };
+			return { 0, constants_nan<float>(), constants_nan<float>() };
 
 		InType result = -c / b;
 		return { 1, result, result };
@@ -21,9 +21,9 @@ find_quadratic_root(InType a, InType b, InType c)
 
 	InType det = (b * b) - (4 * a * c);
 	if(det < InType(0))
-		return return { 0, InType(FLT_MAX), InType(FLT_MAX) };
+		return { 0, constants_nan<float>(), constants_nan<float>() };
 
-	InType q = (b + sign(b) * sqrt(det)) / T(-2);
+	InType q = (b + sign(b) * sqrt(det)) / InType(-2);
 
 	InType t1 = q / a;
 	InType t2 = c / q;

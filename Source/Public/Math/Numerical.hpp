@@ -6,6 +6,7 @@
 #include <type_traits>
 
 #include <Math/Utils.hpp>
+#include <Math/Constants.hpp>
 
 template<typename InType>
 struct QuadraticSolution
