@@ -3,38 +3,60 @@
 
 #include <cstdint>
 
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_main.h>
+struct FrameBuffer;
+struct ApplicationWindow;
 
-struct FrameBuffer
+enum class FrameBufferFormat
 {
-	enum Format
-	{
-		FMT_NULL = 0,
+	FMT_NULL = 0,
 
-		FMT_RGB24,
-		FMT_RGBA32,
-	} format;
-
-	size_t pitch;
-	size_t width, height;
-
-	void *front_buffer, *back_buffer;
+	FMT_RGB24,
+	FMT_RGBA32,
 };
 
-errno_t
-framebuffer_create(FrameBuffer& self, size_t width, size_t height, FrameBuffer::Format format);
+FrameBuffer*
+framebuffer_new();
+void
+framebuffer_free(FrameBuffer* self);
 
-errno_t
-framebuffer_destroy(FrameBuffer& self);
+void
+framebuffer_create(FrameBuffer* self, size_t width, size_t height, FrameBufferFormat format);
+void
+framebuffer_destroy(FrameBuffer* self);
 
-errno_t
-framebuffer_swap(FrameBuffer& self);
+size_t
+framebuffer_get_bps(const FrameBuffer* self);
+size_t
+framebuffer_get_pitch(const FrameBuffer* self);
+size_t
+framebuffer_get_width(const FrameBuffer* self);
+size_t
+framebuffer_get_height(const FrameBuffer* self);
+
+void
+framebuffer_swap(FrameBuffer* self);
+void
+framebuffer_update(FrameBuffer* self, void* buffer);
+void
+framebuffer_resize(FrameBuffer* self, size_t width, size_t height);
 
 
-struct AppWindow
-{
-	SDL_Window* sdl_window;
-};
+ApplicationWindow*
+application_window_new();
+void
+application_window_free(ApplicationWindow* self);
+
+void
+application_window_create(ApplicationWindow* self, const char* title, size_t width, size_t height);
+void
+application_window_destroy(ApplicationWindow* self);
+
+void
+application_window_update(ApplicationWindow* self);
+void
+application_window_render(ApplicationWindow* self);
+
+void
+application_window_handle_event(ApplicationWindow* self, void* event);
 
 #endif

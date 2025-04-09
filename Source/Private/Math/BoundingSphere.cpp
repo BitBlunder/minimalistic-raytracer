@@ -8,7 +8,7 @@ _hit_impl(std::shared_ptr<Hittable> hittable, const Ray& ray, double ray_tmin, d
 	BoundingSphere* sphere = (BoundingSphere*)hittable.get();
 	hit_record.t = bounding_sphere_intersect(*sphere, ray);
 
-	if (hit_record.t < constants_infinity<float>())
+	if (hit_record.t != constants_infinity<float>())
 	{
 		if (hit_record.t <= ray_tmin || hit_record.t >= ray_tmax)
 			return hit_record;

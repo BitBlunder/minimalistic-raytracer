@@ -1,0 +1,30 @@
+cmake_minimum_required(VERSION 3.30)
+project(IMGUI LANGUAGES C CXX)
+
+set(SRC_FILES
+	${CMAKE_CURRENT_SOURCE_DIR}/imgui.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/imgui_draw.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/imgui_tables.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/imgui_widgets.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/backends/imgui_impl_sdlrenderer3.cpp
+)
+
+set(INCLUDE_DIRS
+	${CMAKE_CURRENT_SOURCE_DIR}
+	${CMAKE_CURRENT_SOURCE_DIR}/backends
+)
+
+add_library(${PROJECT_NAME} SHARED ${SRC_FILES})
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+	PREFIX ""
+	RUNTIME_OUTPUT_NAME "IMGUI"
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL3::SDL3)
+target_compile_options(${PROJECT_NAME} PRIVATE -w)
+target_compile_definitions(${PROJECT_NAME} PRIVATE IMGUI_BUILD_DLL)
+target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
+
+add_library(IMGUI::IMGUI ALIAS ${PROJECT_NAME})
