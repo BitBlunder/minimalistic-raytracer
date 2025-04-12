@@ -24,16 +24,18 @@ set(SRC_FILES
 	Source/main.cpp
 	#App
 	Source/Private/App/Window.cpp
-	# Math
-	Source/Private/Math/Hittable.cpp
-	Source/Private/Math/BoundingSphere.cpp
 	# Image
 	Source/Private/Image/Image.cpp
 	Source/Private/Image/PPMHandler.cpp
+	# Math
+	Source/Private/Math/Hittable.cpp
+	Source/Private/Math/BoundingSphere.cpp
 )
 
 set(INCLUDE_DIRS
 	${CMAKE_SOURCE_DIR}/Source/Public
+
+	${CMAKE_SOURCE_DIR}/Vendor
 	${CMAKE_SOURCE_DIR}/Vendor/SDL/include
 )
 

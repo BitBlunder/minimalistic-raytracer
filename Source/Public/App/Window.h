@@ -2,9 +2,19 @@
 #define WINDOW_H
 
 #include <cstdint>
+#include <functional>
+
+#include <mutex>
+#include <thread>
+#include <condition_variable>
+
+#include <IMGUI/imgui.h>
 
 struct FrameBuffer;
 struct ApplicationWindow;
+
+using ApplicationCallback = std::function<void(ApplicationWindow*)>;
+using ApplicationResizeCallback = std::function<void(ApplicationWindow*, size_t, size_t)>;
 
 enum class FrameBufferFormat
 {
@@ -13,6 +23,16 @@ enum class FrameBufferFormat
 	FMT_RGB24,
 	FMT_RGBA32,
 };
+
+struct ApplicationState
+{
+	bool is_dirty;
+	bool is_running;
+
+	std::mutex mtx;
+	std::condition_variable cv;
+	std::thread render_worker_thread;
+} static g_state;
 
 FrameBuffer*
 framebuffer_new();
@@ -46,17 +66,32 @@ application_window_new();
 void
 application_window_free(ApplicationWindow* self);
 
+FrameBuffer*
+application_window_get_framebuffer(ApplicationWindow* self);
+
 void
-application_window_create(ApplicationWindow* self, const char* title, size_t width, size_t height);
+application_window_create(ApplicationWindow* self, const char* title, size_t width = 0, size_t height = 0);
 void
 application_window_destroy(ApplicationWindow* self);
 
 void
-application_window_update(ApplicationWindow* self);
+application_window_init_imgui(ApplicationWindow* self);
 void
-application_window_render(ApplicationWindow* self);
+application_window_shutdown_imgui(ApplicationWindow* self);
 
 void
-application_window_handle_event(ApplicationWindow* self, void* event);
+application_window_on_create(ApplicationWindow* self, ApplicationCallback callback_fn);
+void
+application_window_on_update(ApplicationWindow* self, ApplicationCallback callback_fn);
+void
+application_window_on_render(ApplicationWindow* self, ApplicationCallback callback_fn);
+void
+application_window_on_ui_render(ApplicationWindow* self, ApplicationCallback callback_fn);
+
+void
+application_window_on_resize(ApplicationWindow* self, ApplicationResizeCallback callback_fn);
+
+void
+application_window_handle_loop(ApplicationWindow* self);
 
 #endif

@@ -12,9 +12,21 @@
 #include <Math/Hittable.hpp>
 #include <Math/BoundingSphere.hpp>
 
-#include <Image/Image.hpp>
-#include <Image/PPMHandler.hpp>
+struct RenderContext
+{
+	void* temp_buffer;
+	FrameBuffer* framebuffer;
 
+	Vec3f camera_center = { 0.0f, 0.0f, 0.0f };
+	Vec3f camera_focal_length = { 0.0f, 0.0f, 10.0f };
+
+	float viewport_width = 5.0f;
+	float viewport_height;
+
+	Vec3f pixel_delta_u;
+	Vec3f pixel_delta_v;
+	Vec3f viewport_upper_left;
+};
 
 Vec3f ray_color(const Ray& ray, HittableList& world)
 {
@@ -33,104 +45,179 @@ Vec3f ray_color(const Ray& ray, HittableList& world)
 int main(int argc, char *argv[])
 {
 	ApplicationWindow* window = application_window_new();
-	application_window_create(window, "minimalistic-raytracer", 640, 480);
-
-	bool is_running = true;
-	while (is_running)
-	{
-		SDL_Event event;
-		while (SDL_PollEvent(&event))
-		{
-			if (event.type == SDL_EVENT_QUIT)
-				is_running = false;
-
-			application_window_handle_event(window, &event);
-		}
-	}
-
-	application_window_destroy(window);
-
-	{
-		if(!image_register_handler(ppm_handler_new()))
-			std::cerr << "Error occured while registering PPM Handler\n";
-	}
 
 	HittableList world;
+	RenderContext context;
 
-	std::shared_ptr<BoundingSphere> sphere1_ptr((BoundingSphere*)malloc(sizeof(BoundingSphere)));
-	std::shared_ptr<BoundingSphere> sphere2_ptr((BoundingSphere*)malloc(sizeof(BoundingSphere)));
+	application_window_on_create(window, [&world, &context](ApplicationWindow* self) -> void {
+		context.framebuffer = application_window_get_framebuffer(self);
 
-	bound_sphere_create(*(sphere1_ptr.get()), 20.0f, {10.0f, 0.0f, -150.0f});
-	bound_sphere_create(*(sphere2_ptr.get()), 10.0f, {0.0f, -5.0f, -100.0f});
+		size_t framebuffer_bps = framebuffer_get_bps(context.framebuffer);
+		size_t framebuffer_width = framebuffer_get_width(context.framebuffer);
+		size_t framebuffer_height = framebuffer_get_height(context.framebuffer);
 
-	hittable_list_add(world, sphere1_ptr);
-	hittable_list_add(world, sphere2_ptr);
+		context.temp_buffer = malloc(framebuffer_width * framebuffer_height * framebuffer_bps);
 
-	// Image
-	float aspect_ratio = 16.0f / 9.0f;
+		std::shared_ptr<BoundingSphere> sphere1_ptr((BoundingSphere*)malloc(sizeof(BoundingSphere)));
+		std::shared_ptr<BoundingSphere> sphere2_ptr((BoundingSphere*)malloc(sizeof(BoundingSphere)));
 
-	int image_width = 1920;
-	int image_height = int(image_width / aspect_ratio);
+		bound_sphere_create(*(sphere1_ptr.get()), 20.0f, {10.0f, 0.0f, -150.0f});
+		bound_sphere_create(*(sphere2_ptr.get()), 10.0f, {0.0f, -5.0f, -100.0f});
 
-	image_height = image_height < 1 ? 1 : image_height;
+		hittable_list_add(world, sphere1_ptr);
+		hittable_list_add(world, sphere2_ptr);
 
-	// Camera
-	Vec3f focal_length = {0.0f, 0.0f, 10.0f };
+		g_state.is_dirty = true;
+	});
 
-	float viewport_width = 5.0f;
-	float viewport_height = viewport_width / (float(image_width) / float(image_height));
+	application_window_on_update(window, [&world, &context](ApplicationWindow* self) -> void {
+		size_t framebuffer_width = framebuffer_get_width(context.framebuffer);
+		size_t framebuffer_height = framebuffer_get_height(context.framebuffer);
 
-	Vec3f camera_center = { 0.0f, 0.0f, 0.0f };
+		context.viewport_height = context.viewport_width / (float(framebuffer_width) / float(framebuffer_height));
 
-	Vec3f viewport_u = { viewport_width, 0.0f, 0.0f };
-	Vec3f viewport_v = { 0.0f, -viewport_height, 0.0f };
+		Vec3f viewport_u = { context.viewport_width, 0.0f, 0.0f };
+		Vec3f viewport_v = { 0.0f, -context.viewport_height, 0.0f };
 
-	// Pixels
-	Vec3f pixel_delta_u = viewport_u / float(image_width);
-	Vec3f pixel_delta_v = viewport_v / float(image_height);
+		context.pixel_delta_u = viewport_u / float(framebuffer_width);
+		context.pixel_delta_v = viewport_v / float(framebuffer_height);
 
-	Vec3f viewport_upper_left = camera_center - focal_length - (viewport_u / 2.0f) - (viewport_v / 2.0f);
-	Vec3f pixel00_loc = viewport_upper_left + 0.5f * (pixel_delta_u + pixel_delta_v);
+		context.viewport_upper_left = context.camera_center - context.camera_focal_length - (viewport_u / 2.0f) - (viewport_v / 2.0f);
+	});
 
-	uint8_t* buffer = (uint8_t*)malloc(image_width * image_height * 3);
+	application_window_on_render(window, [&world, &context](ApplicationWindow* self) -> void {
+		size_t framebuffer_width = framebuffer_get_width(context.framebuffer);
+		size_t framebuffer_height = framebuffer_get_height(context.framebuffer);
 
-	for (int y = 0; y < image_height; y++)
-	{
-		std::clog << "\rScanlines remaining: " << (image_height - y) << ' ' << std::flush;
-
-		for (int x = 0; x < image_width; x++)
+		for (int y = 0; y < framebuffer_height; y++)
 		{
-			Vec3f pixel_center = pixel00_loc + (float(x) * pixel_delta_u) + (float(y) * pixel_delta_v);
+			for (int x = 0; x < framebuffer_width; x++)
+			{
+				Vec3f pixel_center = context.viewport_upper_left +
+					(float(x) * context.pixel_delta_u) +
+					(float(y) * context.pixel_delta_v);
 
-			Vec3f direction = pixel_center - camera_center;
+				Vec3f direction = pixel_center - context.camera_center;
 
-			Ray ray { camera_center, vector_normalize(direction) };
+				Ray ray { context.camera_center, vector_normalize(direction) };
 
-			float t = static_cast<float>(x) / (image_width - 1);
+				auto pixel_color = ray_color(ray, world);
 
-			auto pixel_color = ray_color(ray, world);
+				int index = (x + (y * framebuffer_width)) * 3;
 
-			int index = (x + (y * image_width)) * 3;
-
-			buffer[index + 0] = (uint8_t)(pixel_color.r * 255.0f);
-			buffer[index + 1] = (uint8_t)(pixel_color.g * 255.0f);
-			buffer[index + 2] = (uint8_t)(pixel_color.b * 255.0f);
+				auto buffer = (uint8_t*)context.temp_buffer;
+				buffer[index + 0] = (uint8_t)(pixel_color.r * 255.0f);
+				buffer[index + 1] = (uint8_t)(pixel_color.g * 255.0f);
+				buffer[index + 2] = (uint8_t)(pixel_color.b * 255.0f);
+			}
 		}
-	}
 
-	{
-		Image* img = image_new();
+		framebuffer_update(context.framebuffer, context.temp_buffer);
+	});
 
-		img->format = Image::Format::FMT_RGB24;
-		img->filename = "../Assets/sample.ppm";
-		img->width = image_width; img->height = image_height;
+	application_window_on_ui_render(window, [&context](ApplicationWindow* self) -> void {
+		ImGui::Begin("Camera/Viewport Settings");
 
-		if (!image_set_buffer(img, buffer))
-			std::cerr << "Error occured while setting pixels to PPM file from memory\n";
+			// Camera Focal Point
+			{
+				ImGui::Text("Camera Focal Point");
 
-		if (!image_save_file(img))
-			std::cerr << "Error occured while saving PPM file to disk\n";
-	}
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+				if (ImGui::SliderFloat("##FocalPoint", &context.camera_focal_length.z, 0.1f, 100.0f, "%.3f"))
+				{
+					{
+						std::lock_guard<std::mutex> lock(g_state.mtx);
+						g_state.is_dirty = true;
+					}
+
+					g_state.cv.notify_one();
+				}
+			}
+
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// Camera Center
+			{
+				ImGui::Text("Camera Center");
+
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+				if (ImGui::SliderFloat3("##CameraCenter", context.camera_center.data, -1000.0f, 1000.0f, "%.3f"))
+				{
+					{
+						std::lock_guard<std::mutex> lock(g_state.mtx);
+						g_state.is_dirty = true;
+					}
+
+					g_state.cv.notify_one();
+				}
+			}
+
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// Viewport Dimensions
+			{
+				ImGui::Text("Viewport Dimensions");
+
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 2.0f);
+				if (ImGui::SliderFloat("##ViewportWidth", &context.viewport_width, 0.0, 1920.0, "%.3f"))
+				{
+					{
+						std::lock_guard<std::mutex> lock(g_state.mtx);
+						g_state.is_dirty = true;
+					}
+
+					g_state.cv.notify_one();
+				}
+
+				ImGui::SameLine();
+
+				ImGui::BeginDisabled();
+					ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+					ImGui::InputFloat("##ViewportHeight", &context.viewport_height, 0.0, 0.0, "%.3f");
+				ImGui::EndDisabled();
+			}
+
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// Pixel Delta
+			{
+				ImGui::Text("Pixel Delta");
+
+				ImGui::BeginDisabled(true); // Disable editing
+
+					ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+					ImGui::InputFloat3("##PixelDeltaU", context.pixel_delta_u.data, "%.3f");
+
+					ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+					ImGui::InputFloat3("##PixelDeltaV", context.pixel_delta_v.data, "%.3f");
+				ImGui::EndDisabled();
+			}
+
+		ImGui::End();
+	});
+
+	application_window_on_resize(window, [&context](ApplicationWindow* self, size_t width, size_t height) -> void {
+		free(context.temp_buffer);
+
+		context.framebuffer = application_window_get_framebuffer(self);
+
+		size_t framebuffer_bps = framebuffer_get_bps(context.framebuffer);
+		size_t framebuffer_width = framebuffer_get_width(context.framebuffer);
+		size_t framebuffer_height = framebuffer_get_height(context.framebuffer);
+
+		context.temp_buffer = malloc(framebuffer_width * framebuffer_height * framebuffer_bps);
+	});
+
+	application_window_create(window, "minimalistic-raytracer");
+	application_window_init_imgui(window);
+
+	application_window_handle_loop(window);
+
+	application_window_shutdown_imgui(window);
+	application_window_destroy(window);
 
 	return 0;
 }
