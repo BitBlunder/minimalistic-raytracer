@@ -85,14 +85,22 @@ int main(int argc, char *argv[])
 		context.viewport_upper_left = context.camera_center - context.camera_focal_length - (viewport_u / 2.0f) - (viewport_v / 2.0f);
 	});
 
-	application_window_on_render(window, [&world, &context](ApplicationWindow* self) -> void {
-		size_t framebuffer_width = framebuffer_get_width(context.framebuffer);
-		size_t framebuffer_height = framebuffer_get_height(context.framebuffer);
+        application_window_on_render(window, [&world, &context](ApplicationWindow* self) -> void {
+                size_t framebuffer_width = framebuffer_get_width(context.framebuffer);
+                size_t framebuffer_height = framebuffer_get_height(context.framebuffer);
 
-		for (int y = 0; y < framebuffer_height; y++)
-		{
-			for (int x = 0; x < framebuffer_width; x++)
-			{
+                uint32_t start_ver = g_state.render_version.load(std::memory_order_relaxed);
+
+                for (int y = 0; y < framebuffer_height; y++)
+                {
+                        for (int x = 0; x < framebuffer_width; x++)
+                        {
+                                if (start_ver != g_state.render_version.load(std::memory_order_relaxed))
+                                {
+                                        std::lock_guard<std::mutex> lock(g_state.mtx);
+                                        g_state.is_dirty = true;
+                                        return;
+                                }
 				Vec3f pixel_center = context.viewport_upper_left +
 					(float(x) * context.pixel_delta_u) +
 					(float(y) * context.pixel_delta_v);
@@ -125,12 +133,13 @@ int main(int argc, char *argv[])
 				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
 				if (ImGui::SliderFloat("##FocalPoint", &context.camera_focal_length.z, 0.1f, 100.0f, "%.3f"))
 				{
-					{
-						std::lock_guard<std::mutex> lock(g_state.mtx);
-						g_state.is_dirty = true;
-					}
+                                        {
+                                                std::lock_guard<std::mutex> lock(g_state.mtx);
+                                                g_state.is_dirty = true;
+                                                g_state.render_version.fetch_add(1, std::memory_order_relaxed);
+                                        }
 
-					g_state.cv.notify_one();
+                                        g_state.cv.notify_one();
 				}
 			}
 
@@ -144,12 +153,13 @@ int main(int argc, char *argv[])
 				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
 				if (ImGui::SliderFloat3("##CameraCenter", context.camera_center.data, -1000.0f, 1000.0f, "%.3f"))
 				{
-					{
-						std::lock_guard<std::mutex> lock(g_state.mtx);
-						g_state.is_dirty = true;
-					}
+                                        {
+                                                std::lock_guard<std::mutex> lock(g_state.mtx);
+                                                g_state.is_dirty = true;
+                                                g_state.render_version.fetch_add(1, std::memory_order_relaxed);
+                                        }
 
-					g_state.cv.notify_one();
+                                        g_state.cv.notify_one();
 				}
 			}
 
@@ -163,12 +173,13 @@ int main(int argc, char *argv[])
 				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 2.0f);
 				if (ImGui::SliderFloat("##ViewportWidth", &context.viewport_width, 0.0, 1920.0, "%.3f"))
 				{
-					{
-						std::lock_guard<std::mutex> lock(g_state.mtx);
-						g_state.is_dirty = true;
-					}
+                                        {
+                                                std::lock_guard<std::mutex> lock(g_state.mtx);
+                                                g_state.is_dirty = true;
+                                                g_state.render_version.fetch_add(1, std::memory_order_relaxed);
+                                        }
 
-					g_state.cv.notify_one();
+                                        g_state.cv.notify_one();
 				}
 
 				ImGui::SameLine();

@@ -46,11 +46,12 @@ _render_worker_thread(ApplicationWindow* self)
 			return g_state.is_dirty || !g_state.is_running;
 		});
 
-		if (!g_state.is_running)
-			break;
+                if (!g_state.is_running)
+                        break;
 
-		g_state.is_dirty = false;
-		lock.unlock();
+                g_state.is_dirty = false;
+                g_state.render_version.load(std::memory_order_relaxed);
+                lock.unlock();
 
 		if (self->on_render_fn)
 			self->on_render_fn(self);

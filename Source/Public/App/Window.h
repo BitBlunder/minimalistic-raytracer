@@ -5,6 +5,7 @@
 #include <functional>
 
 #include <mutex>
+#include <atomic>
 #include <thread>
 #include <condition_variable>
 
@@ -26,12 +27,14 @@ enum class FrameBufferFormat
 
 struct ApplicationState
 {
-	bool is_dirty;
-	bool is_running;
+        bool is_dirty;
+        bool is_running;
 
-	std::mutex mtx;
-	std::condition_variable cv;
-	std::thread render_worker_thread;
+        std::atomic_uint32_t render_version{0};
+
+        std::mutex mtx;
+        std::condition_variable cv;
+        std::thread render_worker_thread;
 } static g_state;
 
 FrameBuffer*
